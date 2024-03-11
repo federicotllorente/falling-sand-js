@@ -1,7 +1,7 @@
 const LOOP_INTERVAL = 100
 
 const VIEWPORT_MARGIN = 20
-const GRID_COLS = 40
+const GRID_COLS = 50
 const GRID_ROWS = GRID_COLS
 
 const CELL_SIZE = window.innerHeight < window.innerWidth
@@ -56,8 +56,24 @@ function loop() {
 
       if (cell === 1) {
         let cellBelow = grid[i][j + 1]
-        if (cellBelow === 0 && j < GRID_ROWS - 1) {
+        let cellBelowA, cellBelowB
+
+        let dir = Math.random() < 0.5 ? 1 : -1
+
+        if (i - dir >= 0 && i - dir <= GRID_COLS - 1) {
+          cellBelowA = grid[i - dir]?.[j + 1]
+        }
+
+        if (i + dir >= 0 && i + dir <= GRID_COLS - 1) {
+          cellBelowB = grid[i + dir]?.[j + 1]
+        }
+
+        if (cellBelow === 0) {
           nextGrid[i][j + 1] = 1
+        } else if (cellBelowA === 0) {
+          nextGrid[i - dir][j + 1] = 1
+        } else if (cellBelowB === 0) {
+          nextGrid[i + dir][j + 1] = 1
         } else {
           nextGrid[i][j] = 1
         }
@@ -74,6 +90,7 @@ let isPaused = false
 let isMouseDown = false
 
 document.addEventListener('mousedown', (event) => {
+  if (isPaused) return
   if (event.button === 0) {
     isMouseDown = true
     drawCellFromMouseCoordinates(event)
@@ -84,13 +101,14 @@ document.addEventListener('mousedown', (event) => {
 })
 
 function handleMouseUp(_event) {
+  if (isPaused) return
   isMouseDown = false
   document.removeEventListener('mouseup', handleMouseUp)
   document.removeEventListener('mousemove', handleMouseMove)
 }
 
 function handleMouseMove(event) {
-  if (!isMouseDown) return
+  if (!isMouseDown || isPaused) return
   drawCellFromMouseCoordinates(event)
 }
 
@@ -101,7 +119,9 @@ function drawCellFromMouseCoordinates(event) {
   const cellX = Math.floor(mouseX / CELL_SIZE)
   const cellY = Math.floor(mouseY / CELL_SIZE)
 
-  grid[cellX][cellY] = 1
+  if (cellX >= 0 && cellX <= GRID_COLS - 1 && cellY >= 0 && cellY <= GRID_ROWS - 1) {
+    grid[cellX][cellY] = 1
+  }
 }
 
 // Start/pause/resume searching when the spacebar is tapped
