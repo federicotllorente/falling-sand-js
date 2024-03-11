@@ -1,7 +1,7 @@
-const LOOP_INTERVAL = 1000
+const LOOP_INTERVAL = 100
 
 const VIEWPORT_MARGIN = 20
-const GRID_COLS = 50
+const GRID_COLS = 40
 const GRID_ROWS = GRID_COLS
 
 const CELL_SIZE = window.innerHeight < window.innerWidth
@@ -11,6 +11,20 @@ const CELL_SIZE = window.innerHeight < window.innerWidth
 let grid = []
 let int, canvas
 
+function create2DArray(cols, rows) {
+  let arr = new Array(cols)
+
+  for (let i = 0; i < cols; i++) {
+    arr[i] = new Array(rows)
+
+    for (let j = 0; j < rows; j++) {
+      arr[i][j] = 0
+    }
+  }
+
+  return arr
+}
+
 function setup() {
   const app = document.getElementById('app')
   canvas = document.createElement('canvas')
@@ -18,16 +32,7 @@ function setup() {
   canvas.height = GRID_COLS * CELL_SIZE
   app.appendChild(canvas)
 
-  grid = new Array(GRID_COLS)
-  for (let i = 0; i < GRID_COLS; i++) {
-    grid[i] = new Array(GRID_ROWS)
-
-    for (let j = 0; j < GRID_ROWS; j++) {
-      grid[i][j] = 0
-    }
-  }
-
-  grid[10][15] = 1
+  grid = create2DArray(GRID_COLS, GRID_ROWS)
 }
 
 function loop() {
@@ -43,7 +48,73 @@ function loop() {
       ctx.fillRect(i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE)
     }
   }
+
+  let nextGrid = create2DArray(GRID_COLS, GRID_ROWS)
+  for (let i = 0; i < nextGrid.length; i++) {
+    for (let j = 0; j < nextGrid[i].length; j++) {
+      const cell = grid[i][j]
+
+      if (cell === 1) {
+        let cellBelow = grid[i][j + 1]
+        if (cellBelow === 0 && j < GRID_ROWS - 1) {
+          nextGrid[i][j + 1] = 1
+        } else {
+          nextGrid[i][j] = 1
+        }
+      }
+    }
+  }
+  grid = nextGrid
 }
 
 setup()
 int = setInterval(loop, LOOP_INTERVAL)
+
+let isPaused = false
+let isMouseDown = false
+
+document.addEventListener('mousedown', (event) => {
+  if (event.button === 0) {
+    isMouseDown = true
+    drawCellFromMouseCoordinates(event)
+
+    document.addEventListener('mouseup', handleMouseUp)
+    document.addEventListener('mousemove', handleMouseMove)
+  }
+})
+
+function handleMouseUp(_event) {
+  isMouseDown = false
+  document.removeEventListener('mouseup', handleMouseUp)
+  document.removeEventListener('mousemove', handleMouseMove)
+}
+
+function handleMouseMove(event) {
+  if (!isMouseDown) return
+  drawCellFromMouseCoordinates(event)
+}
+
+function drawCellFromMouseCoordinates(event) {
+  const rect = event.target.getBoundingClientRect()
+  const mouseX = event.clientX - rect.left
+  const mouseY = event.clientY - rect.top
+  const cellX = Math.floor(mouseX / CELL_SIZE)
+  const cellY = Math.floor(mouseY / CELL_SIZE)
+
+  grid[cellX][cellY] = 1
+}
+
+// Start/pause/resume searching when the spacebar is tapped
+document.addEventListener('keydown', (event) => {
+  if (event.code === 'Space') {
+    if (!isPaused) {
+      clearInterval(int)
+      console.log('PAUSED')
+      isPaused = true
+    } else {
+      int = setInterval(loop, LOOP_INTERVAL)
+      console.log('RESUMED')
+      isPaused = false
+    }
+  }
+})
