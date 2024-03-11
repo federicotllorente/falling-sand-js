@@ -1,12 +1,15 @@
-const LOOP_INTERVAL = 100
+const LOOP_INTERVAL = 50
 
 const VIEWPORT_MARGIN = 20
-const GRID_COLS = 50
+const GRID_COLS = 100
 const GRID_ROWS = GRID_COLS
 
 const CELL_SIZE = window.innerHeight < window.innerWidth
   ? (window.innerHeight - VIEWPORT_MARGIN) / GRID_ROWS
   : (window.innerWidth - VIEWPORT_MARGIN) / GRID_COLS
+
+const BRUSH_SIZE = 5
+const DRAWING_PROB = 0.3
 
 let grid = []
 let int, canvas
@@ -40,10 +43,6 @@ function loop() {
   for (let i = 0; i < grid.length; i++) {
     for (let j = 0; j < grid[i].length; j++) {
       const cell = grid[i][j]
-      ctx.strokeStyle = 'rgb(255, 255, 255)'
-      ctx.lineWidth = 1
-      ctx.strokeRect(i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-      
       ctx.fillStyle = `rgb(${cell * 255}, ${cell * 255}, ${cell * 255})`
       ctx.fillRect(i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE)
     }
@@ -116,11 +115,21 @@ function drawCellFromMouseCoordinates(event) {
   const rect = event.target.getBoundingClientRect()
   const mouseX = event.clientX - rect.left
   const mouseY = event.clientY - rect.top
-  const cellX = Math.floor(mouseX / CELL_SIZE)
-  const cellY = Math.floor(mouseY / CELL_SIZE)
+  const cellXbase = Math.floor(mouseX / CELL_SIZE)
+  const cellYbase = Math.floor(mouseY / CELL_SIZE)
 
-  if (cellX >= 0 && cellX <= GRID_COLS - 1 && cellY >= 0 && cellY <= GRID_ROWS - 1) {
-    grid[cellX][cellY] = 1
+  const extent = Math.floor(BRUSH_SIZE / 2)
+  for (let i = -extent; i <= extent; i++) {
+    for (let j = -extent; j <= extent; j++) {
+      if (Math.random() < DRAWING_PROB) {
+        cellX = cellXbase + i
+        cellY = cellYbase + j
+  
+        if (cellX >= 0 && cellX <= GRID_COLS - 1 && cellY >= 0 && cellY <= GRID_ROWS - 1) {
+          grid[cellX][cellY] = 1
+        }
+      }
+    }
   }
 }
 
